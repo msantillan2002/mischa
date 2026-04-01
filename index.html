@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mischa </title>
+  <!-- Firebase compat scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    #chat-container { max-width: 500px; margin: 50px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
+    #messages { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    .message { margin: 5px 0; padding: 5px 10px; border-radius: 5px; background: #e1f0ff; }
+    #login, #chat { display: none; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    button { cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+<div id="chat-container">
+  <!-- Login Form -->
+  <div id="login">
+    <h2>HEHEHEHE</h2>
+    <input type="text" id="nickname" placeholder="Enter your nickname">
+    <input type="password" id="password" placeholder="Enter secret password">
+    <button onclick="login()">Enter Chat</button>
+  </div>
+  
+  <!-- Chat Area -->
+  <div id="chat">
+    <h2>Messenger</h2>
+    <div id="messages"></div>
+    <input type="text" id="message-input" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCy-jlEIrd1Cmv9ZmEMd4gyK549uWe1aIM",
+    authDomain: "mescha-12da0.firebaseapp.com",
+    projectId: "mescha-12da0",
+    storageBucket: "mescha-12da0.appspot.com",
+    messagingSenderId: "154628036937",
+    appId: "1:154628036937:web:7d52803f074f29c6322298",
+    measurementId: "G-L9R5YQPW0H"
+  };
+
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const loginDiv = document.getElementById('login');
+  const chatDiv = document.getElementById('chat');
+  const messagesDiv = document.getElementById('messages');
+
+  let nickname = null;
+  const SECRET_PASSWORD = "hello123";
+
+  loginDiv.style.display = 'block';
+
+  function login() {
+    const inputPassword = document.getElementById('password').value;
+    const inputNick = document.getElementById('nickname').value.trim();
+
+    if(inputPassword !== SECRET_PASSWORD){
+      alert("Incorrect password!");
+      return;
+    }
+
+    if(inputNick === ""){
+      alert("Please enter a nickname");
+      return;
+    }
+
+    nickname = inputNick;
+    loginDiv.style.display = 'none';
+    chatDiv.style.display = 'block';
+    loadMessages();
+  }
+
+  function logout() {
+    nickname = null;
+    loginDiv.style.display = 'block';
+    chatDiv.style.display = 'none';
+    messagesDiv.innerHTML = '';
+    document.getElementById('nickname').value = '';
+    document.getElementById('password').value = '';
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('message-input');
+    const text = input.value.trim();
+    if(text === '') return;
+
+    // Save to Firestore
+    db.collection('messages').add({
+      text: text,
+      nickname: nickname,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      input.value = '';
+    }).catch(err => {
+      alert("Error saving message: " + err);
+    });
+  }
+
+  function loadMessages() {
+    db.collection('messages').orderBy('timestamp')
+      .onSnapshot(snapshot => {
+        messagesDiv.innerHTML = '';
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const msgDiv = document.createElement('div');
+          msgDiv.className = 'message';
+          msgDiv.textContent = `${data.nickname}: ${data.text}`;
+          messagesDiv.appendChild(msgDiv);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+      }, err => {
+        console.error("Error loading messages: ", err);
+      });
+  }
+</script>
+
+</body>
+</html>
